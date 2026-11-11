@@ -8,13 +8,18 @@ jobs:
     container: nvidia/cuda:12.6.3-devel-ubuntu24.04
     steps:
       - uses: actions/checkout@v4
-      - run: apt-get update && apt-get install -y --no-install-recommends git
-      - run: git clone --depth 1 --branch v3.8.0 https://github.com/NVIDIA/cutlass.git /opt/cutlass
+      - uses: actions/checkout@v4
+        with:
+          repository: NVIDIA/cutlass
+          ref: v3.8.0
+          path: third_party/cutlass
       - name: compile kernels
         run: |
+          set -e
           for f in gpubench/csrc/*.cu; do
             nvcc -std=c++17 -O3 --expt-relaxed-constexpr -arch=sm_80 \
-              -I/opt/cutlass/include -I/opt/cutlass/tools/util/include -c "$f" -o /tmp/$(basename "$f").o
+              -Ithird_party/cutlass/include -Ithird_party/cutlass/tools/util/include \
+              -c "$f" -o /tmp/$(basename "$f").o
           done
 
   # ...and check the Triton kernels' correctness on CPU via the Triton interpreter.
